@@ -14,4 +14,4 @@ require (
 	golang.org/x/sync v0.3.0 // indirect
 )
 
-replace github.com/vingarcia/ksql v1.12.3 => github.com/vcnt72/ksql v0.0.1
+replace github.com/vingarcia/ksql v1.12.3 => github.com/vcnt72/ksql v0.0.2
