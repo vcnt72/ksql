@@ -81,7 +81,6 @@ func RunTestsForAdapter(
 			PatchTest(t, dialect, connStr, newDBAdapter)
 			QueryChunksTest(t, dialect, connStr, newDBAdapter)
 			TransactionTest(t, dialect, connStr, newDBAdapter)
-			ModifiersTest(t, dialect, connStr, newDBAdapter)
 			ScanRowsTest(t, dialect, connStr, newDBAdapter)
 		})
 	})

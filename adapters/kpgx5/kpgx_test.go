@@ -8,12 +8,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/vingarcia/ksql"
+	tt "github.com/vingarcia/ksql/internal/testtools"
 	"github.com/vingarcia/ksql/sqldialect"
 )
+
+type user struct {
+	ID   uint   `ksql:"id"`
+	Name string `ksql:"name"`
+	Age  int    `ksql:"age"`
+
+	// This attr has no ksql tag, thus, it should be ignored:
+	AttrThatShouldBeIgnored string
+}
+
+var UserTable = ksql.NewTable("users")
 
 func TestAdapter(t *testing.T) {
 	ctx := context.Background()
@@ -30,31 +43,112 @@ func TestAdapter(t *testing.T) {
 	})
 }
 
-//
-// func TestTransaction(t *testing.T) {
-// 	ctx := context.Background()
-//
-// 	postgresURL, closePostgres := startPostgresDB(ctx, "ksql")
-// 	defer closePostgres()
-//
-// 	pool, err := pgxpool.New(ctx, postgresURL)
-// 	if err != nil {
-// 		t.Fatal(err.Error())
-// 	}
-//
-// 	db, err := NewFromPgxPool(pool)
-// 	if err != nil {
-// 		t.Fatal(err.Error())
-// 	}
-//
-// 	err = db.Transaction(ctx, func(p ksql.Provider) error {
-// 		tx, ok :=
-//
-// 		return nil
-// 	})
-//
-// 	tt.AssertNotEqual(t, err, nil)
-// }
+func TestTransaction(t *testing.T) {
+	ctx := context.Background()
+
+	postgresURL, closePostgres := startPostgresDB(ctx, "ksql")
+	defer closePostgres()
+
+	pool, err := pgxpool.New(ctx, postgresURL)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	db, err := NewFromPgxPool(pool)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	_, err = db.Conn().ExecContext(ctx, `CREATE TABLE users (
+		  id serial PRIMARY KEY,
+			age INT,
+			name VARCHAR(50),
+			address jsonb,
+			created_at TIMESTAMP,
+			updated_at TIMESTAMP,
+			nullable_field VARCHAR(50) DEFAULT 'not_null'
+		)`)
+
+	t.Run("should convert DBAdapter to pgx.Tx", func(t *testing.T) {
+		err = db.Transaction(ctx, func(p ksql.Provider) error {
+			_, ok := p.Conn().(pgx.Tx)
+
+			if !ok {
+				t.Fatal("cannot convert from DBAdapter to pgx.Tx")
+			}
+
+			return nil
+		})
+		tt.AssertNoErr(t, err)
+	})
+
+	t.Run("should success on mixing transaction with ksql", func(t *testing.T) {
+		tt.AssertNoErr(t, err)
+		err = db.Transaction(ctx, func(p ksql.Provider) error {
+			tx, ok := p.Conn().(pgx.Tx)
+
+			if !ok {
+				t.Fatal("cannot convert from DBAdapter to pgx.Tx")
+			}
+
+			err := p.Insert(ctx, UserTable, &user{
+				Name: "nadya",
+				Age:  1,
+			})
+			tt.AssertNoErr(t, err)
+
+			_, err = tx.Exec(ctx, "INSERT INTO users(name, age) VALUES ($1, $2)", "goreng", 2)
+
+			tt.AssertNoErr(t, err)
+
+			return nil
+		})
+
+		tt.AssertNoErr(t, err)
+		var users []user
+
+		err = db.Query(ctx, &users, "FROM users")
+
+		tt.AssertNoErr(t, err)
+
+		if len(users) != 2 {
+			t.Fatal("error users not inserted")
+		}
+	})
+
+	t.Run("should rollback on mixing transaction with ksql", func(t *testing.T) {
+		tt.AssertNoErr(t, err)
+		err = db.Transaction(ctx, func(p ksql.Provider) error {
+			tx, ok := p.Conn().(pgx.Tx)
+
+			if !ok {
+				t.Fatal("cannot convert from DBAdapter to pgx.Tx")
+			}
+
+			err := p.Insert(ctx, UserTable, &user{
+				Name: "nadya",
+				Age:  3,
+			})
+			tt.AssertNoErr(t, err)
+
+			_, err = tx.Exec(ctx, "INSERT INTO users(name, age) VALUES ($1, $2)", "goreng", 4)
+
+			tt.AssertNoErr(t, err)
+
+			return fmt.Errorf("fake error for rollback")
+		})
+
+		var users []user
+
+		err = db.Query(ctx, &users, "FROM users WHERE age IN ($1, $2)", 3, 4)
+
+		tt.AssertNoErr(t, err)
+
+		if len(users) != 0 {
+			t.Fatal("error users not rollbacked", len(users))
+		}
+	})
+}
 
 type closerAdapter struct {
 	close func()
