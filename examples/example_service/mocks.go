@@ -35,6 +35,20 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
+// Conn mocks base method.
+func (m *MockProvider) Conn() ksql.DBAdapter {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Conn")
+	ret0, _ := ret[0].(ksql.DBAdapter)
+	return ret0
+}
+
+// Conn indicates an expected call of Conn.
+func (mr *MockProviderMockRecorder) Conn() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Conn", reflect.TypeOf((*MockProvider)(nil).Conn))
+}
+
 // Delete mocks base method.
 func (m *MockProvider) Delete(ctx context.Context, table ksql.Table, idOrRecord interface{}) error {
 	m.ctrl.T.Helper()

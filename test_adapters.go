@@ -2166,7 +2166,8 @@ func QueryChunksTest(
 						ForEachChunk: func(chunk []struct {
 							User user `tablename:"u"`
 							Post post `tablename:"p"`
-						}) error {
+						},
+						) error {
 							lengths = append(lengths, len(chunk))
 							for _, row := range chunk {
 								users = append(users, row.User)
@@ -2426,7 +2427,8 @@ func QueryChunksTest(
 						ForEachChunk: func(buffer []struct {
 							User user `tablename:"users"`
 							Post post `tablename:"posts"`
-						}) error {
+						},
+						) error {
 							return nil
 						},
 					})
@@ -3626,7 +3628,7 @@ func getUserByID(db DBAdapter, dialect sqldialect.Provider, result *user, id uin
 	}
 	defer rows.Close()
 
-	if rows.Next() == false {
+	if !rows.Next() {
 		if rows.Err() != nil {
 			return rows.Err()
 		}
@@ -3662,7 +3664,7 @@ func getUserByName(db DBAdapter, dialect sqldialect.Provider, result *user, name
 	}
 	defer rows.Close()
 
-	if rows.Next() == false {
+	if !rows.Next() {
 		if rows.Err() != nil {
 			return rows.Err()
 		}
@@ -3702,7 +3704,7 @@ func getUserPermissionBySecondaryKeys(db DBAdapter, dialect sqldialect.Provider,
 	}
 	defer rows.Close()
 
-	if rows.Next() == false {
+	if !rows.Next() {
 		if rows.Err() != nil {
 			return userPermission{}, rows.Err()
 		}

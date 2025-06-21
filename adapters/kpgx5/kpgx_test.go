@@ -30,6 +30,32 @@ func TestAdapter(t *testing.T) {
 	})
 }
 
+//
+// func TestTransaction(t *testing.T) {
+// 	ctx := context.Background()
+//
+// 	postgresURL, closePostgres := startPostgresDB(ctx, "ksql")
+// 	defer closePostgres()
+//
+// 	pool, err := pgxpool.New(ctx, postgresURL)
+// 	if err != nil {
+// 		t.Fatal(err.Error())
+// 	}
+//
+// 	db, err := NewFromPgxPool(pool)
+// 	if err != nil {
+// 		t.Fatal(err.Error())
+// 	}
+//
+// 	err = db.Transaction(ctx, func(p ksql.Provider) error {
+// 		tx, ok :=
+//
+// 		return nil
+// 	})
+//
+// 	tt.AssertNotEqual(t, err, nil)
+// }
+
 type closerAdapter struct {
 	close func()
 }

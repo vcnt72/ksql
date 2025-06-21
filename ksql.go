@@ -362,7 +362,7 @@ func (c DB) QueryChunks(
 	}
 	defer rows.Close()
 
-	var idx = 0
+	idx := 0
 	for rows.Next() {
 		// Allocate new slice elements
 		// only if they are not already allocated:
@@ -950,6 +950,10 @@ func (c DB) Exec(ctx context.Context, query string, params ...interface{}) (_ Re
 	return c.db.ExecContext(ctx, query, params...)
 }
 
+func (c DB) Conn() DBAdapter {
+	return c.db
+}
+
 // Transaction encapsulates several queries into a single transaction.
 // All these queries should be made inside the input callback `fn`
 // and they should use the input ksql.Provider.
@@ -959,6 +963,7 @@ func (c DB) Exec(ctx context.Context, query string, params ...interface{}) (_ Re
 //
 // If it happens that a second transaction is started inside a transaction
 // callback the same transaction will be reused with no errors.
+// fn(Provider ,DBAdapter). The first arg is the provider, next is the tx
 func (c DB) Transaction(ctx context.Context, fn func(Provider) error) error {
 	switch txBeginner := c.db.(type) {
 	case Tx:

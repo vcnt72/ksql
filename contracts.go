@@ -47,6 +47,7 @@ type Provider interface {
 
 	Exec(ctx context.Context, query string, params ...interface{}) (Result, error)
 	Transaction(ctx context.Context, fn func(Provider) error) error
+	Conn() DBAdapter
 }
 
 // Table describes the required information for inserting, updating and

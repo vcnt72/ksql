@@ -47,7 +47,6 @@ var _ Provider = Mock{}
 //		user2,
 //	}
 //	assert.Equal(t, expectedInsertedRecords, insertRecords)
-//
 type Mock struct {
 	InsertFn func(ctx context.Context, table Table, record interface{}) error
 	PatchFn  func(ctx context.Context, table Table, record interface{}) error
@@ -59,6 +58,7 @@ type Mock struct {
 
 	ExecFn        func(ctx context.Context, query string, params ...interface{}) (Result, error)
 	TransactionFn func(ctx context.Context, fn func(db Provider) error) error
+	ConnFn        func() DBAdapter
 }
 
 // MockResult implements the Result interface returned by the Exec function
@@ -198,6 +198,18 @@ func (m Mock) Exec(ctx context.Context, query string, params ...interface{}) (Re
 		panic(fmt.Errorf("ksql.Mock.Exec(ctx, %s, %v) called but the ksql.Mock.ExecFn() is not set", query, params))
 	}
 	return m.ExecFn(ctx, query, params...)
+}
+
+// Conn implements Provider.
+// Conn mocks the behaviour
+// If ConnFn is set it will just call it returning the same return values.
+// If ConnFn is unset it will panic with an appropriate error message.
+// I thinks this doesn't need to be tested
+func (m Mock) Conn() DBAdapter {
+	if m.ConnFn == nil {
+		panic(fmt.Errorf("ksql.Mock.Conn(ctx) called but the ksql.Mock.ConnFn() is not set"))
+	}
+	return m.ConnFn()
 }
 
 // Transaction mocks the behavior of the Transaction method.

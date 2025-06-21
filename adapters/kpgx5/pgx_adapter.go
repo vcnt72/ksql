@@ -66,8 +66,7 @@ func (p PGXResult) LastInsertId() (int64, error) {
 	)
 }
 
-// PGXTx is used to implement the DBAdapter interface and implements
-// the Tx interface
+// PGXTx is used to implement interface of pgx.Tx, DBAdapter and Tx
 type PGXTx struct {
 	tx pgx.Tx
 }
@@ -92,6 +91,42 @@ func (p PGXTx) Rollback(ctx context.Context) error {
 // Commit implements the Tx interface
 func (p PGXTx) Commit(ctx context.Context) error {
 	return p.tx.Commit(ctx)
+}
+
+func (p PGXTx) Begin(ctx context.Context) (pgx.Tx, error) {
+	return p.tx.Begin(ctx)
+}
+
+func (p PGXTx) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+	return p.tx.CopyFrom(ctx, tableName, columnNames, rowSrc)
+}
+
+func (p PGXTx) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
+	return p.tx.SendBatch(ctx, b)
+}
+
+func (p PGXTx) LargeObjects() pgx.LargeObjects {
+	return p.tx.LargeObjects()
+}
+
+func (p PGXTx) Conn() *pgx.Conn {
+	return p.tx.Conn()
+}
+
+func (p PGXTx) Prepare(ctx context.Context, name, sql string) (*pgconn.StatementDescription, error) {
+	return p.tx.Prepare(ctx, name, sql)
+}
+
+func (p PGXTx) Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error) {
+	return p.tx.Exec(ctx, sql, arguments...)
+}
+
+func (p PGXTx) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	return p.tx.Query(ctx, sql, args...)
+}
+
+func (p PGXTx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	return p.tx.QueryRow(ctx, sql, args...)
 }
 
 var _ ksql.Tx = PGXTx{}
